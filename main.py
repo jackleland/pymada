@@ -33,7 +33,7 @@ class Ship(object):
 class ShipDefinition(object):
 
     def __init__(self, type, name, command_value, squadron_value, engineering_value, defence_tokens, hull, shields, arcs,
-                 movements, anti_squadron, point_cost, upgrade_slots):
+                 yaw_values, anti_squadron, point_cost, upgrade_slots):
         """
 
         :param type:
@@ -45,7 +45,8 @@ class ShipDefinition(object):
         :param hull:
         :param shields:
         :param arcs:
-        :param movements:           dictionary of {speed:max_yaw} with added max speed attribute
+        :param yaw_values:           list of max_yaw indexed by speed. len(movements) gives maximum speed.
+                                    e.g. [ [2], [1, 2], [1, 1, 2], [0, 1, 1, 2] ]
         :param anti_squadron:
         :param point_cost:
         :param upgrade_slots:
@@ -62,12 +63,29 @@ class ShipDefinition(object):
         self.shields = shields
         self.arcs = arcs
         self.anti_squadron = anti_squadron
-        self.movements = movements
+        self.yaw_values = yaw_values
 
         self.point_cost = point_cost
         self.upgrade_slots = upgrade_slots
 
     def is_move_legal(self, movement, is_navigate=False):
-        if movement.speed > self.movements.
-        for move_speed, move_yaw in movement.items
-        return movement in self.movements
+        navigates_used = 0
+        movement_speed = len(movement)
+        if movement_speed <= len(self.yaw_values):
+            for speed in range(movement_speed):
+                yaw = abs(movement[speed])
+                max_yaw = self.yaw_values[movement_speed][speed]
+                if is_navigate and max_yaw < 2:
+                    max_yaw += 1
+                if yaw > max_yaw:
+                    print('That is not a legal move, yaw value at speed node {} is '.format(speed) +
+                          'above maximum yaw value for that speed')
+                    return False
+                if yaw == max_yaw and is_navigate:
+                    is_navigate = False
+                    navigates_used += 1
+                    print('Navigate used at speed {}'.format(speed))
+            return True
+        else:
+            print('Not a legal move, movement speed exceeds maximum allowed speed for ship {}'.format(self.name))
+            return False
