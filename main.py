@@ -5,10 +5,34 @@ RIGHT_ARC = 'right'
 REAR_ARC = 'rear'
 
 
+class HullZones(dict):
+    def __init__(self, front_val, left_val, right_val, rear_val):
+        super().__init__()
+        self[FRONT_ARC] = front_val
+        self[LEFT_ARC] = left_val
+        self[RIGHT_ARC] = right_val
+        self[REAR_ARC] = rear_val
+
+
+class ShieldHullZones(HullZones):
+    def is_shielded(self, hull_zone):
+        return self[hull_zone] > 0
+
+    def take_damage(self, hull_zone, damage=1):
+        assert hull_zone in self
+        if self[hull_zone] >= damage:
+            self[hull_zone] -= damage
+            return 0
+        else:
+            carry_over = damage - self[hull_zone]
+            self[hull_zone] = 0
+            return carry_over
+
+
 class Ship(object):
 
-    def __init__(self, ship_definition, x_pos, y_pos, angle, speed, upgrades, defence_tokens, command_tokens, damage=0,
-                 damage_effects=None, docked=None, special_points=None):
+    def __init__(self, ship_definition, x_pos, y_pos, angle, speed, upgrades=None, defence_tokens=None, command_tokens=None,
+                 shields=None, hull_damage=0, damage_effects=None, docked=None, special_points=None):
         self.ship_definition = ship_definition
         self.x_pos = x_pos
         self.y_pos = y_pos
@@ -17,7 +41,11 @@ class Ship(object):
         self.upgrades = upgrades
         self.defence_tokens = defence_tokens
         self.command_tokens = command_tokens
-        self.damage = damage
+        if shields:
+            self.shields = shields
+        else:
+            self.shields = ShieldHullZones(*ship_definition.get_shield_values)
+        self.hull_damage = hull_damage
         self.damage_effects = damage_effects
         self.docked = docked
         self.special_points = special_points
@@ -25,8 +53,11 @@ class Ship(object):
     def get_points(self):
         return self.ship_definition.point_cost + self.special_points + self.upgrades.get_points()
 
-    def move(self, movement):
-        assert self.ship_definition.is_move_legal(movement)
+    def move(self, movement, is_navigate=False, is_engine_techs=False):
+        if is_engine_techs:
+            assert len(movement) == 1 and -2 <= movement[0] <= 2
+        else:
+            assert self.ship_definition.is_move_legal(movement, is_navigate=is_navigate)
         self.x_pos, self.y_pos, self.angle = movement.move()
 
 
@@ -89,3 +120,6 @@ class ShipDefinition(object):
         else:
             print('Not a legal move, movement speed exceeds maximum allowed speed for ship {}'.format(self.name))
             return False
+
+    def get_shield_values(self):
+        return self.shields.values()
