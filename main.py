@@ -29,10 +29,22 @@ class ShieldHullZones(HullZones):
             return carry_over
 
 
+class FiringHullZones(HullZones):
+    def __init__(self, front_pool, left_pool, right_pool, rear_pool, front_angle, rear_angle):
+        assert len(front_pool) == 3 and len(left_pool) == 3 and len(right_pool) == 3 and len(rear_pool) == 3
+        super().__init__(front_pool, left_pool, right_pool, rear_pool)
+        self.front_angle = front_angle
+        self.rear_angle = rear_angle
+
+    def get_range_pool(self, hull_zone, dice_range):
+        assert dice_range in [1, 2, 3]
+        return self[hull_zone][:dice_range]
+
+
 class Ship(object):
 
-    def __init__(self, ship_definition, x_pos, y_pos, angle, speed, upgrades=None, defence_tokens=None, command_tokens=None,
-                 shields=None, hull_damage=0, damage_effects=None, docked=None, special_points=None):
+    def __init__(self, ship_definition, x_pos, y_pos, angle, speed, upgrades=None, defence_tokens=None, docked=None,
+                 command_tokens=None, shields=None, hull_damage=0, damage_effects=None, special_points=None):
         self.ship_definition = ship_definition
         self.x_pos = x_pos
         self.y_pos = y_pos
@@ -63,12 +75,13 @@ class Ship(object):
 
 class ShipDefinition(object):
 
-    def __init__(self, type, name, command_value, squadron_value, engineering_value, defence_tokens, hull, shields, arcs,
-                 yaw_values, anti_squadron, point_cost, upgrade_slots):
+    def __init__(self, type, name, size, command_value, squadron_value, engineering_value, defence_tokens, hull,
+                 shields, arcs, yaw_values, anti_squadron, point_cost, upgrade_slots):
         """
 
         :param type:
         :param name:
+        :param size:
         :param command_value:
         :param squadron_value:
         :param engineering_value:
@@ -84,6 +97,7 @@ class ShipDefinition(object):
         """
         self.type = type
         self.name = name
+        self.size = size
 
         self.command_value = command_value
         self.squadron_value = squadron_value
@@ -123,3 +137,35 @@ class ShipDefinition(object):
 
     def get_shield_values(self):
         return self.shields.values()
+
+
+class Squadron(object):
+    def __init__(self, squadron_definition, engaged=0, activated=False, defence_tokens=None, hull_damage=None):
+        self.squadron_definition = squadron_definition
+        self.engaged = engaged
+        self.activated = activated
+        self.defence_tokens = defence_tokens
+        self.hull_damage = hull_damage
+
+
+class SquadronDefinition(object):
+    def __init__(self, name, type, hull, speed, anti_squadron, anti_ship, defence_tokens, abilities, point_cost,
+                 unique=False):
+        self.name = name
+        self.type = type
+        self.hull = hull
+        self.speed = speed
+        self.anti_squadron = anti_squadron
+        self.anti_ship = anti_ship
+        self.defence_tokens = defence_tokens
+        self.abilities = abilities
+        self.point_cost = point_cost
+        self.unique = unique
+
+
+class Board(object):
+    def __init__(self, size, ships, obstacles, squadrons):
+        self.size = size
+        self.ships = ships
+        self.obstacles = obstacles
+        self.squadrons = squadrons
