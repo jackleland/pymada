@@ -101,9 +101,16 @@ class Ship(object):
             raise ValueError('Move given ({}) not legal for ship definition {}'
                              .format(movement, self.ship_definition.name))
         # Decide which side of ruler to use
-
+        # TODO: This assumption may not be strictly true for larger ships, may need a rethink later in development
+        ruler_side = 1
+        for yaw in reversed(movement):
+            if yaw == 0:
+                continue
+            else:
+                ruler_side = np.sign(yaw)
+                break
         # Move
-        w = np.matrix([[0.0], [RULER_WIDTH]])
+        w = ruler_side * np.matrix([[0.0], [RULER_WIDTH]])
         l_1 = np.matrix([[RULER_LENGTH_1], [0.0]])
         l_2 = np.matrix([[RULER_LENGTH_2], [0.0]])
         movement_vector = self.pos + w
@@ -118,7 +125,6 @@ class Ship(object):
             for j in reversed(range(i)):
                 term = rotations[j] * term
             movement_vector += term
-            print(movement_vector)
         w_end = w
         for R in reversed(rotations):
             w_end = R * w_end
